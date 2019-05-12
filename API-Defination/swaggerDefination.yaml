@@ -1,0 +1,298 @@
+swagger: "2.0"
+info:
+  title: Top N Micorservice
+  description: Top N microservice expose API's to collect data from various network device.It also expose API's to search/aggregate operation on metrics collected by devices in network
+  version: "1.0.0"
+
+basePath: /api/topn
+schemes:
+- http
+- https
+paths:
+  /v1/pushmetrics:
+    put:
+      summary: "used by device upload the metric/feed"
+      tags:
+        - topn-microservice
+      parameters:
+        - in: body
+          name: devicemetrics
+          required: false
+          description: Metrics from device
+          schema:
+            $ref: '#/definitions/Metric'
+      produces:
+      - application/json
+      description: |
+        Devices present in network push the metric to top N service.Device can have client side application running which will put metrics to server.
+
+        For example:
+        ```
+        put /api/topn/v1/pushmetrics
+        ```
+
+        metric content:
+        ```
+          {
+              "deviceType": "Jphone",
+              "customerAccount": "TTL USA"
+              "notificationTime": "1212312312313123"
+              "metrics":{
+                "metric1":"a",
+                "metric2":"b",
+                
+              }
+              ...
+              ...
+          }
+        ```
+      responses:
+        '200':
+          description: Metric uploaded to top N service.
+          schema:
+            $ref: "#/definitions/MetricResponse"
+        '404':
+          description: Top N Service not reachable.
+          schema:
+            $ref: "#/definitions/Error"
+        '500':
+          description: Internal server error (e.g. lost database connection)
+          schema:
+            $ref: "#/definitions/Error"
+            
+  /v1/gettopn:
+    post:
+      summary: To fetch TOP N devices based on query parameter on any parameter of metrics.
+      description: |
+        To fetch TOP N devices based on query parameter on any parameter of metrics. Metrics can be sorted on any JSON field. Multi column/field sorting also enabled. For example get Top N device type in some geo location. Top device type from some customer account etc
+        For example:
+        ```
+        POST /api/topn/v1/gettopn
+        ```
+        Sample request body will be :
+        ```
+          {
+            metrickey:"devicetype",
+            metricValue:"printer",
+            topValueCount:1000,
+            pageSize:100,
+          }
+        ```
+        Sample response body will be :
+        ```
+        
+        {
+          topNMetrics :[
+              {
+            metrickey:"devicetype",
+            metricValue:"printer",
+            topValueCount:1000,
+            pageSize:100,
+            pagenumber:0,
+          }
+            ],
+          nextPage :{
+            metrickey :"devicetype",
+            metricvalue:"printer",
+            topvaluecount:1000,
+            pagesize:1
+          }
+        }
+        ```
+      tags:
+        - topn-microservice
+      parameters:
+        - in: body
+          name: metricRequest
+          description: Metric request.
+          schema:
+            $ref: '#/definitions/metricRequest'
+      responses:
+        '200':
+          description: Metric request served successfully
+          schema:
+            $ref: '#/definitions/topnresponse'
+        '400':
+          description: 'Bad Request, Unable to parse the metric message.'
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/Error'
+            
+            
+            
+            
+            
+            
+            
+            
+            
+  /v1/analytics:
+    post:
+      summary: API to do statistical operation on metrics data.It includes getting average of some metrics over last x time interval. Similarly sum, mean, median etc of metrics based on some metric parameter. NOTE- statiscal operation can be done only on number or date fields on other fields operation fail with error.
+      description: |
+        API to do statistical operation on metrics data.It includes getting average of some metrics over last x time interval. Similarly sum, mean, median etc of metrics based on some metric parameter. NOTE- statiscal operation can be done only on number or date fields on other fields operation fail with error.
+        For example:
+        ```
+        POST /api/topn/v1/analytics
+        ```
+        Sample request body will be :
+        ```
+          {
+            metrickey:"CPU",
+            startTime:12312312313,
+            endTime:12312312333,
+            pageSize:100,
+            pageNo:0,
+          }
+        ```
+        Sample response body will be :
+        ```
+        
+        {
+          metrickey:"cpu",
+          average: 12,
+          sum:2311,
+          metricCount: 122,
+          variance :5,
+          standardDeviation:2,
+          nextPage : {
+            metrickey:"CPU",
+            startTime:12312312313,
+            endTime:12312312333,
+            pageSize:100,
+            pageNo:1,
+          }
+        }
+        ```
+      tags:
+        - topn-microservice
+      parameters:
+        - in: body
+          name: metricAnalyticRequest
+          description: Metric Analytic request.
+          schema:
+            $ref: '#/definitions/metricAnalyticRequest'
+      responses:
+        '200':
+          description: Metric request served successfully
+          schema:
+            $ref: '#/definitions/metricAnalyticResponse'
+        '400':
+          description: 'Bad Request, Unable to parse the metric message.'
+          schema:
+            $ref: '#/definitions/Error'
+        '500':
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/Error'          
+definitions:
+  Metric:
+    type: object
+    description: An metric feed
+    required:
+      - deviceType
+      - customerAccount
+      - notiticationTime
+      - metrics
+    properties:
+      deviceType:
+        type: string
+        description: Device type from which feed/metric came
+      customerAccount:
+        type: string
+        description: service provider/customer id
+      notificationTime:
+        type: string
+        description: Notification generation time
+      metrics:
+        type: object
+        description: JSON object it can have any mertics from device. Like usage of device, Frequent access of some site, CPU, Memory info etc But these information should adhare to standerd defined by TOP N Service  
+  MetricResponse:
+    type: object
+    description: Response of metrics
+    required:
+      - status
+    properties:
+      status:
+        type: string
+        description: Status message from server.
+  topnresponse:
+    type: object
+    properties:
+      topNMetrics:
+        type: array
+        items:
+            items:
+              $ref: '#/definitions/Metric'
+      nextPage:
+        type: object
+        $ref: '#/definitions/metricRequest'
+  metricRequest:
+    type: object
+    properties:
+      metrickey:
+        type: string
+      metricvalue:
+        type: string
+      topvaluecount:
+        type: integer
+      pagesize:
+        type: integer
+      pageno:
+        type: integer          
+  Error:
+    type: object
+    required:
+      - code
+      - message
+    properties:
+      code:
+        type: integer
+      message:
+        type: string
+  metricAnalyticRequest:
+    type: object
+    required:
+      - metrickey
+        startTime
+        endTime
+        pageSize
+        pageNo
+    properties:
+      metrickey:
+        type: string
+      startTime:
+        type: string
+      endTime:
+        type: string
+      pagesize:
+        type: integer
+      pageno:
+        type: integer 
+  metricAnalyticResponse:
+    type: object
+    required:
+      - metrickey
+        average
+        sum
+        metricCount
+        variance
+        standardDeviation
+    properties:
+      metrickey:
+        type: string
+      average:
+        type: integer
+      sum:
+        type: integer
+      metricCount:
+        type: integer
+      variance:
+        type: integer
+      standardDeviation:
+        type: integer
+  
+ 
