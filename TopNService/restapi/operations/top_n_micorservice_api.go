@@ -39,19 +39,19 @@ func NewTopNMicorserviceAPI(spec *loads.Document) *TopNMicorserviceAPI {
 		BearerAuthenticator: security.BearerAuth,
 		JSONConsumer:        runtime.JSONConsumer(),
 		JSONProducer:        runtime.JSONProducer(),
+		TopnMicroserviceGetV1PullmetricsHandler: topn_microservice.GetV1PullmetricsHandlerFunc(func(params topn_microservice.GetV1PullmetricsParams) middleware.Responder {
+			return middleware.NotImplemented("operation TopnMicroserviceGetV1Pullmetrics has not yet been implemented")
+		}),
 		TopnMicroservicePostV1AnalyticsHandler: topn_microservice.PostV1AnalyticsHandlerFunc(func(params topn_microservice.PostV1AnalyticsParams) middleware.Responder {
 			return middleware.NotImplemented("operation TopnMicroservicePostV1Analytics has not yet been implemented")
 		}),
 		TopnMicroservicePostV1GettopnHandler: topn_microservice.PostV1GettopnHandlerFunc(func(params topn_microservice.PostV1GettopnParams) middleware.Responder {
 			return middleware.NotImplemented("operation TopnMicroservicePostV1Gettopn has not yet been implemented")
 		}),
-		TopnMicroservicePutV1PushmetricsHandler: topn_microservice.PutV1PushmetricsHandlerFunc(func(params topn_microservice.PutV1PushmetricsParams) middleware.Responder {
-			return middleware.NotImplemented("operation TopnMicroservicePutV1Pushmetrics has not yet been implemented")
-		}),
 	}
 }
 
-/*TopNMicorserviceAPI Top N microservice expose API's to collect data from various network device.It also expose API's to search/aggregate operation on metrics collected by devices in network */
+/*TopNMicorserviceAPI Top N microservice pulls data from different internal service.It expose API's to search/aggregate operation on metrics collected from internal services. */
 type TopNMicorserviceAPI struct {
 	spec            *loads.Document
 	context         *middleware.Context
@@ -79,12 +79,12 @@ type TopNMicorserviceAPI struct {
 	// JSONProducer registers a producer for a "application/json" mime type
 	JSONProducer runtime.Producer
 
+	// TopnMicroserviceGetV1PullmetricsHandler sets the operation handler for the get v1 pullmetrics operation
+	TopnMicroserviceGetV1PullmetricsHandler topn_microservice.GetV1PullmetricsHandler
 	// TopnMicroservicePostV1AnalyticsHandler sets the operation handler for the post v1 analytics operation
 	TopnMicroservicePostV1AnalyticsHandler topn_microservice.PostV1AnalyticsHandler
 	// TopnMicroservicePostV1GettopnHandler sets the operation handler for the post v1 gettopn operation
 	TopnMicroservicePostV1GettopnHandler topn_microservice.PostV1GettopnHandler
-	// TopnMicroservicePutV1PushmetricsHandler sets the operation handler for the put v1 pushmetrics operation
-	TopnMicroservicePutV1PushmetricsHandler topn_microservice.PutV1PushmetricsHandler
 
 	// ServeError is called when an error is received, there is a default handler
 	// but you can set your own with this
@@ -148,16 +148,16 @@ func (o *TopNMicorserviceAPI) Validate() error {
 		unregistered = append(unregistered, "JSONProducer")
 	}
 
+	if o.TopnMicroserviceGetV1PullmetricsHandler == nil {
+		unregistered = append(unregistered, "topn_microservice.GetV1PullmetricsHandler")
+	}
+
 	if o.TopnMicroservicePostV1AnalyticsHandler == nil {
 		unregistered = append(unregistered, "topn_microservice.PostV1AnalyticsHandler")
 	}
 
 	if o.TopnMicroservicePostV1GettopnHandler == nil {
 		unregistered = append(unregistered, "topn_microservice.PostV1GettopnHandler")
-	}
-
-	if o.TopnMicroservicePutV1PushmetricsHandler == nil {
-		unregistered = append(unregistered, "topn_microservice.PutV1PushmetricsHandler")
 	}
 
 	if len(unregistered) > 0 {
@@ -258,6 +258,11 @@ func (o *TopNMicorserviceAPI) initHandlerCache() {
 		o.handlers = make(map[string]map[string]http.Handler)
 	}
 
+	if o.handlers["GET"] == nil {
+		o.handlers["GET"] = make(map[string]http.Handler)
+	}
+	o.handlers["GET"]["/v1/pullmetrics"] = topn_microservice.NewGetV1Pullmetrics(o.context, o.TopnMicroserviceGetV1PullmetricsHandler)
+
 	if o.handlers["POST"] == nil {
 		o.handlers["POST"] = make(map[string]http.Handler)
 	}
@@ -267,11 +272,6 @@ func (o *TopNMicorserviceAPI) initHandlerCache() {
 		o.handlers["POST"] = make(map[string]http.Handler)
 	}
 	o.handlers["POST"]["/v1/gettopn"] = topn_microservice.NewPostV1Gettopn(o.context, o.TopnMicroservicePostV1GettopnHandler)
-
-	if o.handlers["PUT"] == nil {
-		o.handlers["PUT"] = make(map[string]http.Handler)
-	}
-	o.handlers["PUT"]["/v1/pushmetrics"] = topn_microservice.NewPutV1Pushmetrics(o.context, o.TopnMicroservicePutV1PushmetricsHandler)
 
 }
 

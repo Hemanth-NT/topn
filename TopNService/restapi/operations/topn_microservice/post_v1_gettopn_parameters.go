@@ -34,7 +34,7 @@ type PostV1GettopnParams struct {
 	/*Metric request.
 	  In: body
 	*/
-	MetricRequest *models.MetricRequest
+	MetricRequest *models.TopNRequest
 }
 
 // BindRequest both binds and validates a request, it assumes that complex things implement a Validatable(strfmt.Registry) error interface
@@ -48,7 +48,7 @@ func (o *PostV1GettopnParams) BindRequest(r *http.Request, route *middleware.Mat
 
 	if runtime.HasBody(r) {
 		defer r.Body.Close()
-		var body models.MetricRequest
+		var body models.TopNRequest
 		if err := route.Consumer.Consume(r.Body, &body); err != nil {
 			res = append(res, errors.NewParseError("metricRequest", "body", "", err))
 		} else {

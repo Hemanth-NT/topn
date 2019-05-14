@@ -31,43 +31,91 @@ func NewPostV1Gettopn(ctx *middleware.Context, handler PostV1GettopnHandler) *Po
 
 /*PostV1Gettopn swagger:route POST /v1/gettopn topn-microservice postV1Gettopn
 
-To fetch TOP N devices based on query parameter on any parameter of metrics.
+To fetch TOP N information based on the statistical operation on metrics collected from internal services.
 
-To fetch TOP N devices based on query parameter on any parameter of metrics. Metrics can be sorted on any JSON field. Multi column/field sorting also enabled. For example get Top N device type in some geo location. Top device type from some customer account etc
-For example:
+For example metrics collected from service 1 are  below
 ```
-POST /api/topn/v1/gettopn
-```
-Sample request body will be :
-```
-  {
-    metrickey:"devicetype",
-    metricValue:"printer",
-    topValueCount:1000,
-    pageSize:100,
-  }
-```
-Sample response body will be :
-```
+[
+{
+ "customerAccount": "M Mobile",
+ "eventTime": "Tue May 14 2019 18:11:15 GMT+0530 (India Standard Time)"
+ "latitude": "123",
+ "longitude": "123",
+ "cell": "Bangalore India"
+ "metricSource": "Internal Service A",
+ "metricsParam":{
+   "cpuUsage":"90"
+ }
+
+}
 
 {
-  topNMetrics :[
-      {
-    metrickey:"devicetype",
-    metricValue:"printer",
-    topValueCount:1000,
-    pageSize:100,
-    pagenumber:0,
-  }
-    ],
-  nextPage :{
-    metrickey :"devicetype",
-    metricvalue:"printer",
-    topvaluecount:1000,
-    pagesize:1
-  }
+ "customerAccount": "P Mobile",
+ "eventTime": "Tue May 14 2019 18:11:15 GMT+0530 (India Standard Time)"
+ "latitude": "129",
+ "longitude": "723",
+ "cell": "Bangalore India"
+ "metricSource": "Internal Service A",
+ "metricsParam":{
+   "cpuUsage":"50"
+ }
+
 }
+
+]
+
+And user want to know top 1 CPU consuming customer Account then it should result in.
+
+customerAccount= "P Mobile"
 ```
+ For example:
+ ```
+ POST /api/topn/v1/gettopn
+ ```
+ Sample request body will be :
+ ```
+   {
+     metrickey:"cpuUsage",
+     filterCriteria:{
+       list:[{attributeName:"",
+         attributeValue:"",
+         operator:""
+       }],
+       relational:[{attributeName:"",
+         attributeValue:"",
+         operator:""
+       }],
+       rangeCriteria:[
+         {attributeName:"",
+         attributeValue:"",
+         operator:""
+       }]
+     },
+     topValueCount:1000,
+     pageSize:100,
+     pageNo:1
+   }
+ ```
+ Sample response body will be :
+ ```
+
+ {
+   topNMetrics :[
+       {
+     metrickey:"cpuUsage",
+     metricValue:"100",
+   }...
+     ],
+   nextPage :{
+     metrickey :"cpuUsage",
+     filterCriteria:{},
+     topvaluecount:1000,
+     pagesize:100,
+     pageNo:2
+
+   }
+ }
+ ```
 
 
 */

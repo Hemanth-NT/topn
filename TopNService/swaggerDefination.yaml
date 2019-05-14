@@ -1,7 +1,7 @@
 swagger: "2.0"
 info:
   title: Top N Micorservice
-  description: Top N microservice expose API's to collect data from various network device.It also expose API's to search/aggregate operation on metrics collected by devices in network
+  description: Top N microservice pulls data from different internal service.It expose API's to search/aggregate operation on metrics collected from internal services.
   version: "1.0.0"
 
 basePath: /api/topn
@@ -9,62 +9,91 @@ schemes:
 - http
 - https
 paths:
-  /v1/pushmetrics:
-    put:
-      summary: "used by device upload the metric/feed"
+  /v1/pullmetrics:
+    get:
+      summary: "All Internal service will expose this API.TopN service will consume/pull metrics using this API.(NOTE THIS IS DOCUMENTS IN SAME SWAGGER FILE FOR DEMO PURPOSE BUT THIS SERVICE RUNS ON INTERNAL SERVICES NOT ON TOP N)"
       tags:
         - topn-microservice
-      parameters:
-        - in: body
-          name: devicemetrics
-          required: false
-          description: Metrics from device
-          schema:
-            $ref: '#/definitions/Metric'
+      parameters: []
       produces:
       - application/json
       description: |
-        Devices present in network push the metric to top N service.Device can have client side application running which will put metrics to server.
+        All internal service will expose this endpoint. TOP N service will pull metrics from this API exposed by internal services.Reponse of this API will be array of metrics.
 
         For example:
         ```
-        put /api/topn/v1/pushmetrics
+        get /api/topn/v1/pushmetrics
         ```
 
         metric content:
         ```
-          {
-              "deviceType": "Jphone",
-              "customerAccount": "TTL USA"
-              "notificationTime": "1212312312313123"
-              "metrics":{
-                "metric1":"a",
-                "metric2":"b",
-                
+          [{
+             "customerAccount": "M Mobile",
+             "eventTime": "Tue May 14 2019 18:11:15 GMT+0530 (India Standard Time)"
+             "latitude": "123",
+             "longitude": "123",
+             "cell": "Bangalore India"
+             "metricSource": "a",
+             "metricsParam":{
+                "metricParam1":"a",
+                "metricParam2":"b",
+                ...              
               }
-              ...
-              ...
-          }
+          }]
         ```
       responses:
         '200':
-          description: Metric uploaded to top N service.
+          description: Metrics pulled by TOP N service from other internal service.
           schema:
-            $ref: "#/definitions/MetricResponse"
+            $ref: "#/definitions/Metrics"
         '404':
-          description: Top N Service not reachable.
+          description: Internal service not reachable.
           schema:
             $ref: "#/definitions/Error"
         '500':
-          description: Internal server error (e.g. lost database connection)
+          description: Internal server error.
           schema:
             $ref: "#/definitions/Error"
             
   /v1/gettopn:
     post:
-      summary: To fetch TOP N devices based on query parameter on any parameter of metrics.
+      summary: To fetch TOP N information based on the statistical operation on metrics collected from internal services.
       description: |
-        To fetch TOP N devices based on query parameter on any parameter of metrics. Metrics can be sorted on any JSON field. Multi column/field sorting also enabled. For example get Top N device type in some geo location. Top device type from some customer account etc
+       For example metrics collected from service 1 are  below 
+       ```
+       [
+       {
+        "customerAccount": "M Mobile",
+        "eventTime": "Tue May 14 2019 18:11:15 GMT+0530 (India Standard Time)"
+        "latitude": "123",
+        "longitude": "123",
+        "cell": "Bangalore India"
+        "metricSource": "Internal Service A",
+        "metricsParam":{
+          "cpuUsage":"90"
+        }  
+      
+       }
+       
+       {
+        "customerAccount": "P Mobile",
+        "eventTime": "Tue May 14 2019 18:11:15 GMT+0530 (India Standard Time)"
+        "latitude": "129",
+        "longitude": "723",
+        "cell": "Bangalore India"
+        "metricSource": "Internal Service A",
+        "metricsParam":{
+          "cpuUsage":"50"
+        }  
+      
+       }
+       
+       ]
+       
+       And user want to know top 1 CPU consuming customer Account then it should result in.
+       
+       customerAccount= "P Mobile"
+       ```
         For example:
         ```
         POST /api/topn/v1/gettopn
@@ -72,10 +101,25 @@ paths:
         Sample request body will be :
         ```
           {
-            metrickey:"devicetype",
-            metricValue:"printer",
+            metrickey:"cpuUsage",
+            filterCriteria:{
+              list:[{attributeName:"",
+                attributeValue:"",
+                operator:""
+              }],
+              relational:[{attributeName:"",
+                attributeValue:"",
+                operator:""
+              }],
+              rangeCriteria:[
+                {attributeName:"",
+                attributeValue:"",
+                operator:""
+              }]
+            },
             topValueCount:1000,
             pageSize:100,
+            pageNo:1
           }
         ```
         Sample response body will be :
@@ -84,18 +128,17 @@ paths:
         {
           topNMetrics :[
               {
-            metrickey:"devicetype",
-            metricValue:"printer",
-            topValueCount:1000,
-            pageSize:100,
-            pagenumber:0,
-          }
+            metrickey:"cpuUsage",
+            metricValue:"100",
+          }...
             ],
           nextPage :{
-            metrickey :"devicetype",
-            metricvalue:"printer",
+            metrickey :"cpuUsage",
+            filterCriteria:{},
             topvaluecount:1000,
-            pagesize:1
+            pagesize:100,
+            pageNo:2
+            
           }
         }
         ```
@@ -106,7 +149,7 @@ paths:
           name: metricRequest
           description: Metric request.
           schema:
-            $ref: '#/definitions/metricRequest'
+            $ref: '#/definitions/topNRequest'
       responses:
         '200':
           description: Metric request served successfully
@@ -193,55 +236,139 @@ definitions:
     type: object
     description: An metric feed
     required:
-      - deviceType
+      - metricSource
       - customerAccount
-      - notificationTime
-      - metrics
+      - eventTime
+      - metricsParam
+      - latitude
+      - longitude
+      - cell
     properties:
-      deviceType:
+      metricSource:
         type: string
-        description: Device type from which feed/metric came
+        description: Source or internal service from which metric is pulled
       customerAccount:
         type: string
-        description: service provider/customer id
-      notificationTime:
+        description: service provider/customer id/Customer info used in analytical operation
+      eventTime:
         type: string
         description: Notification generation time
-      metrics:
+      latitude:
+        type: integer
+        description: latitude where device location
+      longitude:
+        type: integer
+        description: Longitude where device location
+      cell:
+        type: string
+        description: Humar readable location like Bangalore, Delhi etc
+      metricsParam:
         type: object
         description: JSON object it can have any mertics from device. Like usage of device, Frequent access of some site, CPU, Memory info etc But these information should adhare to standerd defined by TOP N Service  
-  MetricResponse:
+
+  Metrics:
     type: object
-    description: Response of metrics
     required:
-      - status
+      - metrics
     properties:
-      status:
+      metrics: 
+        type: array
+        items:
+          $ref: '#/definitions/Metric'
+        description: Array of Metric  
+
+  topNRequest:
+    type: object
+    description: Model for TopN request API
+    required:
+      - metrickey
+      - filterCriteria
+      - topvaluecount
+      - pagesize
+      - pageno
+    properties:
+      metrickey:
         type: string
-        description: Status message from server.
+        description: "Json field on which "
+      filterCriteria:
+        type: object
+        $ref: '#/definitions/criteria'
+      topvaluecount:
+        type: integer
+        description: Top N count needed
+      pagesize:
+        type: integer
+        description: page size of response
+      pageno:
+        type: integer
+        description: page number of response
+
+  criteria:
+    type: object
+    required:
+      - list
+      - range
+      - relational
+    properties:
+      list: 
+        type : array
+        description: For example SQL IN condition query. 
+        items:
+          $ref: '#/definitions/filterParam'
+      range: 
+        type : array
+        description: For SQL Between condition call.
+        items:
+          $ref: '#/definitions/filterParam'
+      relational: 
+        type : array
+        description: For SQL > < <> condition call.
+        items:
+          $ref: '#/definitions/filterParam'
+
+        
+
+  filterParam:
+    type: object
+    description: Basic unit of filtering
+    required:
+      - attributeValue
+      - attributeKey
+      - operator
+    properties:
+      attributeValue:
+        type: string
+        description: Any JSON field to be filtered
+      attributeKey:
+        type: string
+        description: Value with which json field to be filtered
+      operator:
+        type: string
+        description: operators > ,< ,= ,!=, etc
+
   topnresponse:
     type: object
     properties:
       topNMetrics:
         type: array
         items:
-          $ref: '#/definitions/Metric'
+            $ref: '#/definitions/topResponseValue'
       nextPage:
-        type: object
-        $ref: '#/definitions/metricRequest'
-  metricRequest:
+        type: string
+
+  topResponseValue:
     type: object
+    required:
+      - metrickey
+      - metricValue
     properties:
-      metrickey:
+       metrickey:
         type: string
-      metricvalue:
+        description: JSON field on which TOP N service filtered
+       metricValue:
         type: string
-      topvaluecount:
-        type: integer
-      pagesize:
-        type: integer
-      pageno:
-        type: integer          
+        description: Values in sorted order
+      
   Error:
     type: object
     required:
@@ -271,6 +398,8 @@ definitions:
         type: integer
       pageNo:
         type: integer 
+
+        
   metricAnalyticResponse:
     type: object
     required:
@@ -294,5 +423,7 @@ definitions:
       standardDeviation:
         type: integer
   
- 
+
+
+
  

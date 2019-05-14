@@ -19,19 +19,15 @@ import (
 type Topnresponse struct {
 
 	// next page
-	NextPage *MetricRequest `json:"nextPage,omitempty"`
+	NextPage string `json:"nextPage,omitempty"`
 
 	// top n metrics
-	TopNMetrics []*Metric `json:"topNMetrics"`
+	TopNMetrics []*TopResponseValue `json:"topNMetrics"`
 }
 
 // Validate validates this topnresponse
 func (m *Topnresponse) Validate(formats strfmt.Registry) error {
 	var res []error
-
-	if err := m.validateNextPage(formats); err != nil {
-		res = append(res, err)
-	}
 
 	if err := m.validateTopNMetrics(formats); err != nil {
 		res = append(res, err)
@@ -40,24 +36,6 @@ func (m *Topnresponse) Validate(formats strfmt.Registry) error {
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
-	return nil
-}
-
-func (m *Topnresponse) validateNextPage(formats strfmt.Registry) error {
-
-	if swag.IsZero(m.NextPage) { // not required
-		return nil
-	}
-
-	if m.NextPage != nil {
-		if err := m.NextPage.Validate(formats); err != nil {
-			if ve, ok := err.(*errors.Validation); ok {
-				return ve.ValidateName("nextPage")
-			}
-			return err
-		}
-	}
-
 	return nil
 }
 

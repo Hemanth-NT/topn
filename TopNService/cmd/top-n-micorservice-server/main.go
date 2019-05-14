@@ -29,7 +29,7 @@ func main() {
 
 	parser := flags.NewParser(server, flags.Default)
 	parser.ShortDescription = "Top N Micorservice"
-	parser.LongDescription = "Top N microservice expose API's to collect data from various network device.It also expose API's to search/aggregate operation on metrics collected by devices in network"
+	parser.LongDescription = "Top N microservice pulls data from different internal service.It expose API's to search/aggregate operation on metrics collected from internal services."
 
 	server.ConfigureFlags()
 	for _, optsGroup := range api.CommandLineOptionsGroups {

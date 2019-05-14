@@ -34,6 +34,11 @@ func configureAPI(api *operations.TopNMicorserviceAPI) http.Handler {
 
 	api.JSONProducer = runtime.JSONProducer()
 
+	if api.TopnMicroserviceGetV1PullmetricsHandler == nil {
+		api.TopnMicroserviceGetV1PullmetricsHandler = topn_microservice.GetV1PullmetricsHandlerFunc(func(params topn_microservice.GetV1PullmetricsParams) middleware.Responder {
+			return middleware.NotImplemented("operation topn_microservice.GetV1Pullmetrics has not yet been implemented")
+		})
+	}
 	if api.TopnMicroservicePostV1AnalyticsHandler == nil {
 		api.TopnMicroservicePostV1AnalyticsHandler = topn_microservice.PostV1AnalyticsHandlerFunc(func(params topn_microservice.PostV1AnalyticsParams) middleware.Responder {
 			return middleware.NotImplemented("operation topn_microservice.PostV1Analytics has not yet been implemented")
@@ -42,11 +47,6 @@ func configureAPI(api *operations.TopNMicorserviceAPI) http.Handler {
 	if api.TopnMicroservicePostV1GettopnHandler == nil {
 		api.TopnMicroservicePostV1GettopnHandler = topn_microservice.PostV1GettopnHandlerFunc(func(params topn_microservice.PostV1GettopnParams) middleware.Responder {
 			return middleware.NotImplemented("operation topn_microservice.PostV1Gettopn has not yet been implemented")
-		})
-	}
-	if api.TopnMicroservicePutV1PushmetricsHandler == nil {
-		api.TopnMicroservicePutV1PushmetricsHandler = topn_microservice.PutV1PushmetricsHandlerFunc(func(params topn_microservice.PutV1PushmetricsParams) middleware.Responder {
-			return middleware.NotImplemented("operation topn_microservice.PutV1Pushmetrics has not yet been implemented")
 		})
 	}
 

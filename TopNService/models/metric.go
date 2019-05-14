@@ -17,46 +17,79 @@ import (
 // swagger:model Metric
 type Metric struct {
 
-	// service provider/customer id
+	// Humar readable location like Bangalore, Delhi etc
+	// Required: true
+	Cell *string `json:"cell"`
+
+	// service provider/customer id/Customer info used in analytical operation
 	// Required: true
 	CustomerAccount *string `json:"customerAccount"`
 
-	// Device type from which feed/metric came
+	// Notification generation time
 	// Required: true
-	DeviceType *string `json:"deviceType"`
+	EventTime *string `json:"eventTime"`
+
+	// latitude where device location
+	// Required: true
+	Latitude *int64 `json:"latitude"`
+
+	// Longitude where device location
+	// Required: true
+	Longitude *int64 `json:"longitude"`
+
+	// Source or internal service from which metric is pulled
+	// Required: true
+	MetricSource *string `json:"metricSource"`
 
 	// JSON object it can have any mertics from device. Like usage of device, Frequent access of some site, CPU, Memory info etc But these information should adhare to standerd defined by TOP N Service
 	// Required: true
-	Metrics interface{} `json:"metrics"`
-
-	// Notification generation time
-	// Required: true
-	NotificationTime *string `json:"notificationTime"`
+	MetricsParam interface{} `json:"metricsParam"`
 }
 
 // Validate validates this metric
 func (m *Metric) Validate(formats strfmt.Registry) error {
 	var res []error
 
+	if err := m.validateCell(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if err := m.validateCustomerAccount(formats); err != nil {
 		res = append(res, err)
 	}
 
-	if err := m.validateDeviceType(formats); err != nil {
+	if err := m.validateEventTime(formats); err != nil {
 		res = append(res, err)
 	}
 
-	if err := m.validateMetrics(formats); err != nil {
+	if err := m.validateLatitude(formats); err != nil {
 		res = append(res, err)
 	}
 
-	if err := m.validateNotificationTime(formats); err != nil {
+	if err := m.validateLongitude(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateMetricSource(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateMetricsParam(formats); err != nil {
 		res = append(res, err)
 	}
 
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *Metric) validateCell(formats strfmt.Registry) error {
+
+	if err := validate.Required("cell", "body", m.Cell); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -69,27 +102,45 @@ func (m *Metric) validateCustomerAccount(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *Metric) validateDeviceType(formats strfmt.Registry) error {
+func (m *Metric) validateEventTime(formats strfmt.Registry) error {
 
-	if err := validate.Required("deviceType", "body", m.DeviceType); err != nil {
+	if err := validate.Required("eventTime", "body", m.EventTime); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (m *Metric) validateMetrics(formats strfmt.Registry) error {
+func (m *Metric) validateLatitude(formats strfmt.Registry) error {
 
-	if err := validate.Required("metrics", "body", m.Metrics); err != nil {
+	if err := validate.Required("latitude", "body", m.Latitude); err != nil {
 		return err
 	}
 
 	return nil
 }
 
-func (m *Metric) validateNotificationTime(formats strfmt.Registry) error {
+func (m *Metric) validateLongitude(formats strfmt.Registry) error {
 
-	if err := validate.Required("notificationTime", "body", m.NotificationTime); err != nil {
+	if err := validate.Required("longitude", "body", m.Longitude); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *Metric) validateMetricSource(formats strfmt.Registry) error {
+
+	if err := validate.Required("metricSource", "body", m.MetricSource); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *Metric) validateMetricsParam(formats strfmt.Registry) error {
+
+	if err := validate.Required("metricsParam", "body", m.MetricsParam); err != nil {
 		return err
 	}
 
